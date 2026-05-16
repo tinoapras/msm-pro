@@ -1161,6 +1161,7 @@ tfoot td { padding: 10px 12px; font-weight: 700; font-family: 'JetBrains Mono', 
 
 
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 <!-- ── MOBILE OVERLAY ─────────────────────────────────── -->
@@ -2560,8 +2561,13 @@ let _sbUrl='', _sbKey='', _sb=null, _sbReady=false;
 
 function sbInit(){
   if(!_sbUrl||!_sbKey)return false;
-  try{ _sb=window.supabase.createClient(_sbUrl,_sbKey); _sbReady=true; return true; }
-  catch(e){ console.error('SB init:',e); return false; }
+  try{
+    const _sbLib=window.supabase||window.Supabase||window.SupabaseJS;
+    if(!_sbLib){console.error('Supabase CDN not loaded');return false;}
+    const fn=_sbLib.createClient||_sbLib.default?.createClient;
+    if(!fn){console.error('createClient not found',Object.keys(_sbLib));return false;}
+    _sb=fn(_sbUrl,_sbKey); _sbReady=true; return true;
+  }catch(e){console.error('SB init:',e);return false;}
 }
 
 function sbSetStatus(s){
@@ -2715,7 +2721,11 @@ async function sbTest(){
   const res=document.getElementById('sb-test-result');
   if(res)res.innerHTML='<span style="color:var(--yw)">⏳ Testing…</span>';
   try{
-    _sb=window.supabase.createClient(_sbUrl,_sbKey);
+    const _lib=window.supabase||window.Supabase||window.SupabaseJS;
+    if(!_lib)throw new Error('Supabase JS belum load. Refresh halaman dulu.');
+    const _fn=_lib.createClient||_lib.default?.createClient;
+    if(!_fn)throw new Error('createClient tidak ditemukan: '+JSON.stringify(Object.keys(_lib)));
+    _sb=_fn(_sbUrl,_sbKey);
     _sbReady=true;
     const {data,error}=await _sb.from('db_options').select('key').limit(1);
     if(error)throw new Error(error.message);
